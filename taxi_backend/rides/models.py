@@ -39,11 +39,9 @@ class Driver(models.Model):
 class RideOffer(models.Model):
     """
     Объявление таксиста — «Еду из A в B в такое-то время».
-    Это главная сущность приложения.
     """
     STATUS_CHOICES = [
         ('active', 'Активно'),
-        ('booked', 'Забронировано'),
         ('done', 'Завершено'),
         ('cancelled', 'Отменено'),
     ]
@@ -53,31 +51,20 @@ class RideOffer(models.Model):
         related_name='offers', verbose_name='Таксист'
     )
 
-    # Маршрут
     from_city = models.CharField(max_length=150, verbose_name='Откуда (город/район)')
     to_district = models.CharField(max_length=150, verbose_name='Куда (посёлок/район)')
-    route_description = models.TextField(
-        blank=True,
-        verbose_name='Описание маршрута',
-        help_text='Доп. информация: заезды, промежуточные остановки и т.д.'
-    )
-
-    # Время
+    route_description = models.TextField(blank=True, verbose_name='Описание маршрута')
     departure_time = models.DateTimeField(verbose_name='Время отправления')
-
-    # Цена и места
+    
+    # Общая вместимость (сколько всего мест в машине)
+    total_seats = models.PositiveSmallIntegerField(default=4, verbose_name='Всего мест')
     price_per_seat = models.PositiveIntegerField(verbose_name='Цена за место (сум)')
-    seats_available = models.PositiveSmallIntegerField(
-        default=3, verbose_name='Свободных мест'
-    )
 
-    # Статус
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES,
         default='active', verbose_name='Статус'
     )
 
-    # Мета
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Обновлено')
 
@@ -87,22 +74,37 @@ class RideOffer(models.Model):
         ordering = ['departure_time']
 
     def __str__(self):
-        return f'{self.from_city} → {self.to_district} | {self.departure_time:%d.%m %H:%M} | {self.driver.name}'
+        return f'{self.from_city} → {self.to_district} | {self.departure_time:%d.%m %H:%M}'
+
+    @property
+    def confirmed_seats(self):
+        """Считаем только подтвержденные и пришедшие бронирования"""
+        return self.bookings.filter(status__in=['confirmed', 'checked_in']).aggregate(
+            models.Sum('seats_requested')
+        )['seats_requested__sum'] or 0
+
+    @property
+    def seats_available(self):
+        """Оставшиеся свободные места"""
+        return max(0, self.total_seats - self.confirmed_seats)
 
     @property
     def is_available(self):
+        """Доступна ли поездка для ПОИСКА и новых заявок"""
         return self.status == 'active' and self.seats_available > 0 and self.departure_time > timezone.now()
 
 
 class Booking(models.Model):
     """
-    Заявка пассажира на конкретное объявление.
-    Создаётся когда пользователь нажал «Хочу ехать».
+    Заявка пассажира. Теперь с полным жизненным циклом.
     """
     STATUS_CHOICES = [
         ('pending', 'Ожидает подтверждения'),
-        ('confirmed', 'Подтверждено'),
-        ('cancelled', 'Отменено'),
+        ('confirmed', 'Подтверждено (Место занято)'),
+        ('rejected', 'Отклонено водителем'),
+        ('cancelled', 'Отменено пассажиром'),
+        ('checked_in', 'Пассажир сел в машину'),
+        ('no_show', 'Пассажир не пришел (Место освободилось)'),
     ]
 
     offer = models.ForeignKey(
@@ -118,7 +120,7 @@ class Booking(models.Model):
         max_length=20, choices=STATUS_CHOICES,
         default='pending', verbose_name='Статус'
     )
-    note = models.TextField(blank=True, verbose_name='Комментарий пассажира')
+    note = models.TextField(blank=True, verbose_name='Комментарий')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

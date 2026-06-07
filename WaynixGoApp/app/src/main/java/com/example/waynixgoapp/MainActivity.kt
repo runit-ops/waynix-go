@@ -40,7 +40,7 @@ fun WaynixAppWithAuth() {
         ) 
     }
     
-    val language = prefs.language
+    var language by remember { mutableStateOf(prefs.language) }
     var serverStatus by remember { mutableStateOf<ServerStatus>(ServerStatus.Checking) }
     val scope = rememberCoroutineScope()
     val apiService = remember { com.example.waynixgoapp.data.network.ApiService.create() }
@@ -74,6 +74,9 @@ fun WaynixAppWithAuth() {
                                 e.printStackTrace()
                             }
                             isAuthenticated = false
+                        },
+                        onLanguageChange = { newLang ->
+                            language = newLang
                         }
                     )
                 } else {

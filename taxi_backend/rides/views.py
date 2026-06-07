@@ -147,31 +147,27 @@ class DriverDetailView(generics.RetrieveAPIView):
 class RideOfferListView(generics.ListAPIView):
     """
     GET /api/rides/
-    Список активных объявлений. Поддерживает фильтрацию:
-
-    ?to=Сергели          — поиск по направлению
-    ?from=Ташкент        — поиск по городу отправления
-    ?search=Сергели      — общий поиск по маршруту
-    ?ordering=price_per_seat  — сортировка по цене
-    ?ordering=departure_time  — сортировка по времени
+    Список активных объявлений.
     """
     serializer_class = RideOfferSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['from_city', 'to_district', 'route_description', 'driver__name']
     ordering_fields = ['departure_time', 'price_per_seat', 'created_at']
-    ordering = ['departure_time']  # По умолчанию — ближайшие сначала
+    ordering = ['departure_time']
 
     def get_queryset(self):
-        to_param = self.request.query_params.get('to')
-        from_param = self.request.query_params.get('from')
-        logger.debug(f"Запрос списка поездок: from={from_param}, to={to_param}")
+        driver_id = self.request.query_params.get('driver_id')
+        
+        # Если это водитель запрашивает свои — показываем ВСЁ (даже неактивные)
+        if driver_id:
+            return RideOffer.objects.filter(driver_id=driver_id).order_by('-created_at')
 
+        # Иначе — обычный поиск для пассажиров (только активные и с местами)
         qs = RideOffer.objects.filter(
             status='active',
             departure_time__gt=timezone.now()
         ).select_related('driver')
 
-        # Дополнительные фильтры через query params
         to_param = self.request.query_params.get('to')
         from_param = self.request.query_params.get('from')
 
@@ -180,7 +176,61 @@ class RideOfferListView(generics.ListAPIView):
         if from_param:
             qs = qs.filter(from_city__icontains=from_param)
 
+        # Фильтрация: Показываем только те, где реально есть подтвержденные места
+        from django.db.models import Sum, F, fields
+        from django.db.models.functions import Coalesce
+
+        qs = qs.annotate(
+            confirmed_seats_count=Coalesce(
+                Sum('bookings__seats_requested', filter=Q(bookings__status__in=['confirmed', 'checked_in'])),
+                0,
+                output_field=fields.IntegerField()
+            )
+        ).filter(confirmed_seats_count__lt=F('total_seats'))
+
         return qs
+
+
+@api_view(['PATCH'])
+def booking_status_update(request, pk):
+    """
+    PATCH /api/bookings/<id>/status/
+    Водитель меняет статус бронирования (подтверждает, отмечает неявку и т.д.)
+    """
+    try:
+        booking = Booking.objects.get(pk=pk)
+    except Booking.DoesNotExist:
+        return Response({'error': 'Бронирование не найдено'}, status=status.HTTP_404_NOT_FOUND)
+
+    driver_id = request.data.get('driver_id')
+    new_status = request.data.get('status')
+    
+    if not driver_id or not new_status:
+        return Response({'error': 'driver_id и status обязательны'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if str(booking.offer.driver.id) != str(driver_id):
+        return Response({'error': 'Это не ваша поездка'}, status=status.HTTP_403_FORBIDDEN)
+
+    allowed_statuses = [choice[0] for choice in Booking.STATUS_CHOICES]
+    if new_status not in allowed_statuses:
+        return Response({'error': 'Недопустимый статус'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if new_status == 'confirmed':
+        available = booking.offer.seats_available
+        if booking.seats_requested > available:
+            return Response({'error': f'Недостаточно мест. Доступно: {available}'}, status=status.HTTP_400_BAD_REQUEST)
+
+    booking.status = new_status
+    booking.save()
+    
+    return Response({
+        'message': f'Статус брони изменен на {new_status}',
+        'booking': {
+            'id': booking.id,
+            'status': booking.status,
+            'seats_available_now': booking.offer.seats_available
+        }
+    })
 
 
 class RideOfferCreateView(generics.CreateAPIView):
@@ -253,6 +303,10 @@ def ride_offer_status(request, pk):
     allowed = ['active', 'cancelled', 'done', 'booked']
     if new_status not in allowed:
         return Response({'error': f'Допустимые статусы: {allowed}'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if new_status == 'done' and offer.status != 'done':
+        offer.driver.total_rides += 1
+        offer.driver.save()
 
     offer.status = new_status
     offer.save()

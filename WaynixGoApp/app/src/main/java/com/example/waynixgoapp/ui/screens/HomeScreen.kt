@@ -8,15 +8,20 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.waynixgoapp.ui.components.*
 import com.example.waynixgoapp.ui.theme.*
 
 // HOME SCREEN
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onProfileClick: () -> Unit,
@@ -52,58 +57,69 @@ fun HomeScreen(
     Column(Modifier.fillMaxSize()) {
         WaynixTopBar(trailingContent = { ProfileAvatarButton(onClick = onProfileClick) })
 
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(Dimens.paddingMd),
-            verticalArrangement = Arrangement.spacedBy(Dimens.paddingSm)
+        val pullToRefreshState = rememberPullToRefreshState()
+        
+        PullToRefreshBox(
+            state = pullToRefreshState,
+            isRefreshing = isLoading,
+            onRefresh = {
+                viewModel.refreshRides()
+            },
+            modifier = Modifier.fillMaxSize()
         ) {
-            item {
-                WaynixDropdown(
-                    label = strings.fromCity,
-                    value = fromText,
-                    icon = Icons.Filled.LocationOn,
-                    onClick = { showFromSheet = true }
-                )
-            }
-
-            item {
-                SwapButton(onSwap = {
-                    val tmp = fromText
-                    fromText = toText
-                    toText = tmp
-                })
-            }
-
-            item {
-                WaynixDropdown(
-                    label = strings.toDistrict,
-                    value = toText,
-                    icon = Icons.Filled.Navigation,
-                    onClick = { showToSheet = true }
-                )
-            }
-
-            item {
-                DayTabRow(selected = dayTab, onSelect = { dayTab = it })
-            }
-
-            item {
-                Text(
-                    "${strings.adsDrivers} (${filteredRides.size})",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
-                    color = WaynixColors.Yellow,
-                    letterSpacing = 0.5.sp
-                )
-            }
-
-            if (filteredRides.isEmpty()) {
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(Dimens.paddingMd),
+                verticalArrangement = Arrangement.spacedBy(Dimens.paddingSm)
+            ) {
                 item {
-                    EmptyState(icon = Icons.Filled.Search, message = strings.noDrivers)
+                    WaynixDropdown(
+                        label = strings.fromCity,
+                        value = fromText,
+                        icon = Icons.Filled.LocationOn,
+                        onClick = { showFromSheet = true }
+                    )
                 }
-            } else {
-                items(filteredRides) { ride ->
-                    RideCard(ride = ride)
+
+                item {
+                    SwapButton(onSwap = {
+                        val tmp = fromText
+                        fromText = toText
+                        toText = tmp
+                    })
+                }
+
+                item {
+                    WaynixDropdown(
+                        label = strings.toDistrict,
+                        value = toText,
+                        icon = Icons.Filled.Navigation,
+                        onClick = { showToSheet = true }
+                    )
+                }
+
+                item {
+                    DayTabRow(selected = dayTab, onSelect = { dayTab = it })
+                }
+
+                item {
+                    Text(
+                        "${strings.adsDrivers} (${filteredRides.size})",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = WaynixColors.Yellow,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+
+                if (filteredRides.isEmpty()) {
+                    item {
+                        EmptyState(icon = Icons.Filled.Search, message = strings.noDrivers)
+                    }
+                } else {
+                    items(filteredRides, key = { it.id ?: it.hashCode() }) { ride ->
+                        RideCard(ride = ride)
+                    }
                 }
             }
         }

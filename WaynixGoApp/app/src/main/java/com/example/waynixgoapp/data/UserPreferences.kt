@@ -27,6 +27,10 @@ class UserPreferences(context: Context) {
         get() = prefs.getString("user_language", "RU") ?: "RU"
         set(value) = prefs.edit().putString("user_language", value).apply()
 
+    var driverId: Int
+        get() = prefs.getInt("user_driver_id", -1)
+        set(value) = prefs.edit().putInt("user_driver_id", value).apply()
+
     /** Email of the Google account linked to the phone account (2FA-style). */
     var googleEmail: String
         get() = prefs.getString("user_google_email", "") ?: ""

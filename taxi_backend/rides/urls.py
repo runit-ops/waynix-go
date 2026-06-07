@@ -23,4 +23,5 @@ urlpatterns = [
     # Бронирования
     path('bookings/', views.BookingListView.as_view(), name='booking-list'),
     path('bookings/create/', views.BookingCreateView.as_view(), name='booking-create'),
+    path('bookings/<int:pk>/status/', views.booking_status_update, name='booking-status'),
 ]

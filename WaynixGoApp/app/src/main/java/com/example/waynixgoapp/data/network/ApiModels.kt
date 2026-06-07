@@ -43,8 +43,10 @@ data class ApiRideOffer(
     @SerializedName("route_description") val routeDescription: String?,
     @SerializedName("departure_time") val departureTime: String?,
     @SerializedName("price_per_seat") val pricePerSeat: Int,
+    @SerializedName("total_seats") val totalSeats: Int,
     @SerializedName("seats_available") val seatsAvailable: Int,
     val status: String,
+    val bookings: List<ApiBooking> = emptyList(),
     @SerializedName("is_available") val isAvailable: Boolean?,
     @SerializedName("created_at") val createdAt: String?
 )
@@ -69,7 +71,8 @@ data class CreateRideRequest(
     @SerializedName("route_description") val routeDescription: String = "",
     @SerializedName("departure_time") val departureTime: String,
     @SerializedName("price_per_seat") val pricePerSeat: Int,
-    @SerializedName("seats_available") val seatsAvailable: Int = 3
+    @SerializedName("total_seats") val totalSeats: Int = 4,
+    val seatsAvailable: Int
 )
 
 data class CreateBookingRequest(
@@ -81,6 +84,11 @@ data class CreateBookingRequest(
 )
 
 data class StatusChangeRequest(
+    @SerializedName("driver_id") val driverId: Int,
+    val status: String
+)
+
+data class BookingStatusRequest(
     @SerializedName("driver_id") val driverId: Int,
     val status: String
 )
@@ -137,6 +145,7 @@ fun ApiRideOffer.toRide(): com.example.waynixgoapp.data.Ride {
         to = toDistrict,
         pricePerSeat = pricePerSeat,
         availableSeats = seatsAvailable,
+        totalSeats = totalSeats,
         status = status,
         comment = routeDescription ?: "",
         phoneNumber = driver.phone,

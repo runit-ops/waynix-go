@@ -3,6 +3,7 @@ package com.example.waynixgoapp.ui.theme
 import androidx.compose.ui.graphics.Color
 
 object WaynixColors {
+    val BgLight = Color(0xFFFFD600)
     val Yellow     = Color(0xFFFFD600)
     val Teal       = Color(0xFF00B4AE)
     val TealDark   = Color(0xFF008C87)

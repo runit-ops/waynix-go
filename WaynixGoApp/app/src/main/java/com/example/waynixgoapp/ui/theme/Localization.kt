@@ -70,7 +70,15 @@ data class WaynixStrings(
     val googleLinked: String,
     val googleLinkFailed: String,
     val googleAlreadyLinkedToOther: String,
-    val whyLinkGoogle: String
+    val whyLinkGoogle: String,
+    val activeAds: String,
+    val history: String,
+    val emptyHistory: String,
+    val noActiveAds: String,
+    val finishRide: String,
+    val rideFinished: String,
+    val selectFromCity: String,
+    val selectToDistrict: String
 )
 
 val RuStrings = WaynixStrings(
@@ -79,7 +87,7 @@ val RuStrings = WaynixStrings(
     home = "Главная",
     postAd = "Добавить",
     language = "ЯЗЫК",
-    supportCenter = "ЦЕНТР ПОДДЕРЖКИ",
+    supportCenter = "ПОДДЕРЖКА",
     logout = "ВЫЙТИ",
     settings = "НАСТРОЙКИ",
     myAds = "Мои поездки",
@@ -87,7 +95,7 @@ val RuStrings = WaynixStrings(
     toDistrict = "Куда",
     passenger = "Пассажир",
     driver = "Водитель",
-    sendSuggestions = "Пришлите ваши предложения",
+    sendSuggestions = "Ответим на любые вопросы",
     write = "Написать",
     areYouSureLogout = "Вы уверены, что хотите выйти?",
     cancel = "Отмена",
@@ -137,7 +145,15 @@ val RuStrings = WaynixStrings(
     googleLinked = "Google аккаунт привязан",
     googleLinkFailed = "Не удалось привязать Google. Попробуйте ещё раз.",
     googleAlreadyLinkedToOther = "Этот Google уже привязан к другому номеру.",
-    whyLinkGoogle = "Двухфакторная защита: вход возможен только если телефон и Google совпадают."
+    whyLinkGoogle = "Двухфакторная защита: вход возможен только если телефон и Google совпадают.",
+    activeAds = "АКТИВНЫЕ",
+    history = "ИСТОРИЯ",
+    emptyHistory = "ИСТОРИЯ ПУСТА",
+    noActiveAds = "НЕТ АКТИВНЫХ ЗАПРОСОВ",
+    finishRide = "ЗАВЕРШИТЬ ПОЕЗДКУ",
+    rideFinished = "ПОЕЗДКА ЗАВЕРШЕНА",
+    selectFromCity = "Выберите пункт отправления",
+    selectToDistrict = "Выберите пункт назначения"
 )
 
 val UzStrings = WaynixStrings(
@@ -204,7 +220,15 @@ val UzStrings = WaynixStrings(
     googleLinked = "Google hisob bog'landi",
     googleLinkFailed = "Google'ni bog'lab bo'lmadi. Qayta urinib ko'ring.",
     googleAlreadyLinkedToOther = "Bu Google boshqa raqamga bog'langan.",
-    whyLinkGoogle = "Ikki faktorli himoya: kirish uchun telefon va Google mos kelishi shart."
+    whyLinkGoogle = "Ikki faktorli himoya: kirish uchun telefon va Google mos kelishi shart.",
+    activeAds = "FAOL",
+    history = "TARIX",
+    emptyHistory = "TARIX BO'SH",
+    noActiveAds = "FAOL SO'ROVLAR YO'Q",
+    finishRide = "SAFARNI YAKUNLASH",
+    rideFinished = "SAFAR YAKUNLANDI",
+    selectFromCity = "Jo'nash joyini tanlang",
+    selectToDistrict = "Borish joyini tanlang"
 )
 
 val LocalWaynixStrings = compositionLocalOf { RuStrings }

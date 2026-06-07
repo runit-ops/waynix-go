@@ -9,6 +9,7 @@ data class Ride(
     val to: String,
     val pricePerSeat: Int,
     val availableSeats: Int,
+    val totalSeats: Int = 4,
     val status: String = "active",
     val comment: String = "",
     val phoneNumber: String = "",

@@ -10,7 +10,10 @@ import com.example.waynixgoapp.ui.screens.*
 
 // MAIN APP ENTRY
 @Composable
-fun WaynixGoApp(onLogout: () -> Unit = {}) {
+fun WaynixGoApp(
+    onLogout: () -> Unit = {},
+    onLanguageChange: (String) -> Unit = {}
+) {
     // 0 = Home, 1 = MyAds, 2 = Post (central FAB), 3 = Profile
     var selectedTab by remember { mutableIntStateOf(0) }
 
@@ -28,7 +31,7 @@ fun WaynixGoApp(onLogout: () -> Unit = {}) {
                 0 -> HomeScreen(onProfileClick = { selectedTab = 3 })
                 1 -> MyAdsScreen(onProfileClick = { selectedTab = 3 })
                 2 -> PostScreen(onClose = { selectedTab = 0 }, onPublish = { _, _, _, _ -> selectedTab = 0 })
-                3 -> ProfileScreen(onBack = { selectedTab = 0 }, onLogout = onLogout)
+                3 -> ProfileScreen(onBack = { selectedTab = 0 }, onLogout = onLogout, onLanguageChange = onLanguageChange)
             }
         }
     }

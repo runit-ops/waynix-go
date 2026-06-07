@@ -31,7 +31,8 @@ interface ApiService {
         @Query("to") to: String? = null,
         @Query("from") from: String? = null,
         @Query("search") search: String? = null,
-        @Query("ordering") ordering: String? = null
+        @Query("ordering") ordering: String? = null,
+        @Query("driver_id") driverId: Int? = null
     ): PaginatedResponse<ApiRideOffer>
 
     @GET("api/rides/{id}/")
@@ -61,6 +62,12 @@ interface ApiService {
 
     @GET("api/bookings/")
     suspend fun getBookings(@Query("phone") phone: String): List<ApiBooking>
+
+    @PATCH("api/bookings/{id}/status/")
+    suspend fun updateBookingStatus(
+        @Path("id") id: Int,
+        @Body request: BookingStatusRequest
+    ): Map<String, Any>
 
     // ─── FACTORY ─────────────────────────────────────────
 

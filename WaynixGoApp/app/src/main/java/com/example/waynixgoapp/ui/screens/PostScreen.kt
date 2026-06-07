@@ -93,7 +93,6 @@ fun PostScreen(
                 onClick = { showToSheet = true }
             )
 
-            DayTabRow(selected = dayTab, onSelect = { dayTab = it })
 
             Text(
                 strings.seatsCount,
@@ -223,6 +222,14 @@ fun PostScreen(
 
             Button(
                 onClick = {
+                    if (from == "(Все)") {
+                        errorMessage = strings.selectFromCity
+                        return@Button
+                    }
+                    if (to == "(Все)") {
+                        errorMessage = strings.selectToDistrict
+                        return@Button
+                    }
                     if (prefs.phone.isBlank()) {
                         errorMessage = strings.setPhoneInProfile
                         return@Button
@@ -246,6 +253,7 @@ fun PostScreen(
                                 )
                             )
                             val driverId = driverResponse.driver.id
+                            prefs.driverId = driverId
 
                             val nowDt = LocalDateTime.now()
                             var departureTime = when (dayTab) {

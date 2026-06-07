@@ -29,6 +29,7 @@ fun WaynixBottomBar(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val strings = LocalWaynixStrings.current
     Surface(
         shadowElevation = 8.dp,
         color = WaynixColors.White,
@@ -42,7 +43,7 @@ fun WaynixBottomBar(
         ) {
             BottomBarItem(
                 icon = Icons.Filled.Home,
-                label = "Главная",
+                label = strings.home,
                 selected = selected == 0,
                 onClick = { onSelect(0) },
                 modifier = Modifier.weight(1f)
@@ -73,7 +74,7 @@ fun WaynixBottomBar(
 
             BottomBarItem(
                 icon = Icons.Outlined.DirectionsCar,
-                label = "Мои",
+                label = strings.myAds,
                 selected = selected == 1,
                 onClick = { onSelect(1) },
                 modifier = Modifier.weight(1f)

@@ -43,6 +43,7 @@ data class ProfileState(
 fun ProfileScreen(
     onBack: () -> Unit,
     onLogout: () -> Unit = {},
+    onLanguageChange: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val prefs = remember { UserPreferences(context) }
@@ -108,6 +109,7 @@ fun ProfileScreen(
                     onLanguageChange = { newLang ->
                         state = state.copy(language = newLang)
                         prefs.language = newLang
+                        onLanguageChange(newLang)
                     }
                 )
             }
