@@ -54,7 +54,7 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not session:
         await update.message.reply_text("❌ Активная сессия не найдена. Сначала введите номер в приложении WaynixGO, потом вернитесь сюда.", parse_mode="HTML")
         return
-    if not session.is_valid:
+    if timezone.now() > session.expires_at:
         await update.message.reply_text("⏰ Сессия истекла. Начните заново в приложении.")
         return
     session.telegram_user_id = update.effective_user.id
