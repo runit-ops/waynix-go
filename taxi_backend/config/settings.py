@@ -1,6 +1,7 @@
 """
 settings.py — Настройки Django для таксишного приложения
 """
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,6 +27,7 @@ INSTALLED_APPS = [
 
     # Наше приложение
     'rides',
+    'telegram_bot',
 ]
 
 MIDDLEWARE = [
@@ -85,6 +87,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ─── CORS — разрешаем запросы с любого источника (для разработки) ────────────
 CORS_ALLOW_ALL_ORIGINS = True
+
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_BOT_USERNAME = os.environ.get('TELEGRAM_BOT_USERNAME', 'WaynixGo_bot')
 
 # ─── Django REST Framework ────────────────────────────────────────────────────
 REST_FRAMEWORK = {

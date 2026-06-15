@@ -2,7 +2,8 @@
 rides/serializers.py — Сериализаторы (Python-объект ↔ JSON)
 """
 from rest_framework import serializers
-from .models import Driver, RideOffer, Booking
+import uuid
+from .models import Driver, RideOffer, Booking, TelegramAuthSession
 from django.utils import timezone
 
 
@@ -175,3 +176,12 @@ class RideOfferCreateSerializer(serializers.ModelSerializer):
         driver_id = validated_data.pop('driver_id')
         driver = Driver.objects.get(id=driver_id)
         return RideOffer.objects.create(driver=driver, **validated_data)
+
+
+class TelegramAuthInitSerializer(serializers.Serializer):
+    phone = serializers.CharField(max_length=20)
+
+
+class TelegramAuthVerifySerializer(serializers.Serializer):
+    session_id = serializers.UUIDField()
+    code = serializers.CharField(max_length=6, min_length=6)

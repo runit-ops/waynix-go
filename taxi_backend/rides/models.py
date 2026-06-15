@@ -1,6 +1,7 @@
 """
 rides/models.py — Модели базы данных
 """
+import uuid
 from django.db import models
 from django.utils import timezone
 
@@ -130,3 +131,26 @@ class Booking(models.Model):
 
     def __str__(self):
         return f'{self.passenger_name} → {self.offer}'
+
+
+class TelegramAuthSession(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Ожидает'),
+        ('code_sent', 'Код отправлен'),
+        ('verified', 'Проверен'),
+        ('expired', 'Истёк'),
+    ]
+    session_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    phone = models.CharField(max_length=20)
+    telegram_user_id = models.BigIntegerField(null=True, blank=True)
+    code = models.CharField(max_length=6)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ['-created_at']
+
+    @property
+    def is_valid(self):
+        return self.status == 'code_sent' and timezone.now() <= self.expires_at

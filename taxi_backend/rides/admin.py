@@ -2,7 +2,7 @@
 rides/admin.py — Настройка Django Admin
 """
 from django.contrib import admin
-from .models import Driver, RideOffer, Booking
+from .models import Driver, RideOffer, Booking, TelegramAuthSession
 
 
 @admin.register(Driver)
@@ -27,3 +27,8 @@ class BookingAdmin(admin.ModelAdmin):
     list_display = ['passenger_name', 'passenger_phone', 'offer', 'seats_requested', 'status', 'created_at']
     list_filter = ['status']
     search_fields = ['passenger_name', 'passenger_phone']
+
+@admin.register(TelegramAuthSession)
+class TelegramAuthSessionAdmin(admin.ModelAdmin):
+    list_display = ['session_id', 'phone', 'code', 'status', 'created_at']
+    list_filter = ['status']

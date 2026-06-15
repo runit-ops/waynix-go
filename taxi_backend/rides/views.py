@@ -365,3 +365,35 @@ class BookingListView(generics.ListAPIView):
         return Booking.objects.filter(
             passenger_phone__icontains=phone
         ).select_related('offer', 'offer__driver')
+
+import random
+from datetime import timedelta
+from .serializers import TelegramAuthInitSerializer, TelegramAuthVerifySerializer
+
+@api_view(['POST'])
+def telegram_auth_init(request):
+    serializer = TelegramAuthInitSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    phone = serializer.validated_data['phone']
+    code = '%06d' % random.randint(0, 999999)
+    session = TelegramAuthSession.objects.create(phone=phone, code=code, expires_at=timezone.now() + timedelta(minutes=5))
+    from django.conf import settings
+    return Response({'session_id': str(session.session_id), 'bot_url': f"https://t.me/{getattr(settings, 'TELEGRAM_BOT_USERNAME', 'WaynixGo_bot')}"}, status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+def telegram_auth_verify(request):
+    serializer = TelegramAuthVerifySerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    try:
+        session = TelegramAuthSession.objects.get(session_id=serializer.validated_data['session_id'])
+    except TelegramAuthSession.DoesNotExist:
+        return Response({'error': 'Сессия не найдена'}, status=404)
+    if session.status == 'verified':
+        return Response({'error': 'Уже использована'}, status=400)
+    if timezone.now() > session.expires_at:
+        session.status = 'expired'; session.save()
+        return Response({'error': 'Код истёк'}, status=400)
+    if session.code != serializer.validated_data['code']:
+        return Response({'error': 'Неверный код'}, status=400)
+    session.status = 'verified'; session.save()
+    return Response({'success': True, 'phone': session.phone})
