@@ -22,22 +22,32 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Не удалось получить номер. /start")
         return
     phone_digits = "".join(filter(str.isdigit, contact.phone_number))
+    logger.info(f"Contact received: {contact.phone_number} -> digits: {phone_digits}")
+    
+    # Показать все сессии для отладки
+    all_sessions = list(TelegramAuthSession.objects.all().order_by("-created_at")[:10])
+    for s in all_sessions:
+        sd = "".join(filter(str.isdigit, s.phone))
+        logger.info(f"  Session: phone={s.phone} (digits={sd}) status={s.status} last9={sd[-9:]} vs {phone_digits[-9:]}")
+    
     session = None
-    for s in TelegramAuthSession.objects.filter(status="pending").order_by("-created_at")[:50]:
+    for s in all_sessions:
+        if s.status != "pending":
+            continue
         sd = "".join(filter(str.isdigit, s.phone))
         if sd[-9:] == phone_digits[-9:]:
             session = s
             break
     if not session:
-        await update.message.reply_text("❌ Активная сессия не найдена. Введите номер в приложении WaynixGO.", parse_mode="HTML")
+        await update.message.reply_text("❌ Активная сессия не найдена. Сначала введите номер в приложении WaynixGO, потом вернитесь сюда.", parse_mode="HTML")
         return
     if not session.is_valid:
-        await update.message.reply_text("⏰ Сессия истекла. Начните заново.")
+        await update.message.reply_text("⏰ Сессия истекла. Начните заново в приложении.")
         return
     session.telegram_user_id = update.effective_user.id
     session.status = "code_sent"
     session.save()
-    await update.message.reply_text(f"✅ Код: <code>{session.code}</code>\nВернитесь в приложение.", parse_mode="HTML", reply_markup={})
+    await update.message.reply_text(f"✅ Номер подтверждён!\n\n🔑 Код для входа:\n<code>{session.code}</code>\n\nВернитесь в приложение WaynixGO и введите этот код.", parse_mode="HTML", reply_markup={})
 
 async def handle_unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Нажмите /start чтобы начать.")
