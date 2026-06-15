@@ -159,3 +159,26 @@ data class HealthResponse(
     val status: String,
     val message: String
 )
+
+// ═══════════════════════════════════════════════
+//  TELEGRAM AUTH MODELS
+// ═══════════════════════════════════════════════
+
+data class TelegramAuthInitRequest(
+    val phone: String
+)
+
+data class TelegramAuthInitResponse(
+    @SerializedName("session_id") val sessionId: String,
+    @SerializedName("bot_url") val botUrl: String
+)
+
+data class TelegramAuthVerifyRequest(
+    @SerializedName("session_id") val sessionId: String,
+    val code: String
+)
+
+data class TelegramAuthVerifyResponse(
+    val success: Boolean,
+    val phone: String
+)

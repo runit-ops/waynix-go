@@ -24,6 +24,13 @@ interface ApiService {
     @GET("api/health/")
     suspend fun healthCheck(): HealthResponse
 
+    // ─── TELEGRAM AUTH ─────────────────────────────────
+    @POST("api/auth/telegram/init/")
+    suspend fun telegramAuthInit(@Body request: TelegramAuthInitRequest): TelegramAuthInitResponse
+
+    @POST("api/auth/telegram/verify/")
+    suspend fun telegramAuthVerify(@Body request: TelegramAuthVerifyRequest): TelegramAuthVerifyResponse
+
     // ─── ОБЪЯВЛЕНИЯ (RIDES) ──────────────────────────────
 
     @GET("api/rides/")

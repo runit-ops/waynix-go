@@ -10,7 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from .models import Driver, RideOffer, Booking
+from .models import Driver, RideOffer, Booking, TelegramAuthSession
 from .serializers import (
     DriverSerializer, DriverCreateSerializer,
     RideOfferSerializer, RideOfferCreateSerializer,

@@ -17,7 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,12 +41,16 @@ fun WaynixAppWithAuth() {
     
     var language by remember { mutableStateOf(prefs.language) }
     var serverStatus by remember { mutableStateOf<ServerStatus>(ServerStatus.Checking) }
+    var serverErrorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val apiService = remember { com.example.waynixgoapp.data.network.ApiService.create() }
 
     // Check server on start
     LaunchedEffect(Unit) {
-        checkServer(apiService) { status -> serverStatus = status }
+        checkServer(apiService) { status, msg ->
+            serverStatus = status
+            serverErrorMessage = msg
+        }
     }
 
     com.example.waynixgoapp.ui.theme.ProvideWaynixStrings(languageCode = language) {
@@ -56,23 +59,25 @@ fun WaynixAppWithAuth() {
                 LoadingScreen()
             }
             ServerStatus.Error -> {
-                ConnectionErrorScreen(onRetry = {
-                    serverStatus = ServerStatus.Checking
-                    scope.launch {
-                        checkServer(apiService) { status -> serverStatus = status }
+                ConnectionErrorScreen(
+                    errorMessage = serverErrorMessage,
+                    onRetry = {
+                        serverStatus = ServerStatus.Checking
+                        serverErrorMessage = null
+                        scope.launch {
+                            checkServer(apiService) { status, msg ->
+                                serverStatus = status
+                                serverErrorMessage = msg
+                            }
+                        }
                     }
-                })
+                )
             }
             ServerStatus.Ok -> {
                 if (isAuthenticated) {
                     WaynixGoApp(
                         onLogout = {
                             prefs.clear()
-                            try {
-                                FirebaseAuth.getInstance().signOut()
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
                             isAuthenticated = false
                         },
                         onLanguageChange = { newLang ->
@@ -97,14 +102,14 @@ enum class ServerStatus { Checking, Ok, Error }
 
 suspend fun checkServer(
     apiService: com.example.waynixgoapp.data.network.ApiService,
-    onResult: (ServerStatus) -> Unit
+    onResult: (ServerStatus, String?) -> Unit
 ) {
     try {
         apiService.healthCheck()
-        onResult(ServerStatus.Ok)
+        onResult(ServerStatus.Ok, null)
     } catch (e: Exception) {
         e.printStackTrace()
-        onResult(ServerStatus.Error)
+        onResult(ServerStatus.Error, e.message ?: "Unknown error")
     }
 }
 
@@ -123,7 +128,7 @@ fun LoadingScreen() {
 }
 
 @Composable
-fun ConnectionErrorScreen(onRetry: () -> Unit) {
+fun ConnectionErrorScreen(errorMessage: String? = null, onRetry: () -> Unit) {
     val strings = com.example.waynixgoapp.ui.theme.LocalWaynixStrings.current
     Box(
         modifier = Modifier
@@ -149,6 +154,15 @@ fun ConnectionErrorScreen(onRetry: () -> Unit) {
                 textAlign = TextAlign.Center,
                 color = com.example.waynixgoapp.ui.theme.WaynixColors.TextMain
             )
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = errorMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                    color = com.example.waynixgoapp.ui.theme.WaynixColors.TextMain.copy(alpha = 0.6f)
+                )
+            }
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = onRetry,
