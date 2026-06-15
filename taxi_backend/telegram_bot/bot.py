@@ -1,6 +1,7 @@
 import os, sys, logging
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+from asgiref.sync import sync_to_async
 
 if "django" not in sys.modules or not os.environ.get("DJANGO_SETTINGS_MODULE"):
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
@@ -9,6 +10,18 @@ if "django" not in sys.modules or not os.environ.get("DJANGO_SETTINGS_MODULE"):
 from django.utils import timezone
 from rides.models import TelegramAuthSession
 logger = logging.getLogger(__name__)
+
+@sync_to_async
+def get_pending_sessions():
+    return list(TelegramAuthSession.objects.filter(status="pending").order_by("-created_at")[:50])
+
+@sync_to_async
+def get_all_sessions():
+    return list(TelegramAuthSession.objects.all().order_by("-created_at")[:10])
+
+@sync_to_async
+def save_session(session):
+    session.save()
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -24,16 +37,16 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     phone_digits = "".join(filter(str.isdigit, contact.phone_number))
     logger.info(f"Contact received: {contact.phone_number} -> digits: {phone_digits}")
     
-    # Показать все сессии для отладки
-    all_sessions = list(TelegramAuthSession.objects.all().order_by("-created_at")[:10])
+    # Получаем сессии через sync_to_async
+    pending_sessions = await get_pending_sessions()
+    all_sessions = await get_all_sessions()
+    
     for s in all_sessions:
         sd = "".join(filter(str.isdigit, s.phone))
-        logger.info(f"  Session: phone={s.phone} (digits={sd}) status={s.status} last9={sd[-9:]} vs {phone_digits[-9:]}")
+        logger.info(f"  Session: phone={s.phone} (digits={sd}) status={s.status}")
     
     session = None
-    for s in all_sessions:
-        if s.status != "pending":
-            continue
+    for s in pending_sessions:
         sd = "".join(filter(str.isdigit, s.phone))
         if sd[-9:] == phone_digits[-9:]:
             session = s
@@ -46,7 +59,7 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     session.telegram_user_id = update.effective_user.id
     session.status = "code_sent"
-    session.save()
+    await save_session(session)
     await update.message.reply_text(f"✅ Номер подтверждён!\n\n🔑 Код для входа:\n<code>{session.code}</code>\n\nВернитесь в приложение WaynixGO и введите этот код.", parse_mode="HTML", reply_markup={})
 
 async def handle_unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
